@@ -6,7 +6,7 @@ class ApiService {
 
   constructor() {
     this.axiosInstance = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
+      baseURL: 'http://127.0.0.1:8000/api',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -37,8 +37,8 @@ class ApiService {
         return response
       },
       (error: AxiosError<ApiError>) => {
-        // Handle 401 Unauthorized - redirect to login
-        if (error.response?.status === 401) {
+        // Handle 401 Unauthorized - hanya redirect jika BUKAN dari halaman login
+        if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
           localStorage.removeItem('token')
           localStorage.removeItem('user')
           window.location.href = '/login'

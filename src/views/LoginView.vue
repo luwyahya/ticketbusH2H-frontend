@@ -1,45 +1,54 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-    <Card class="w-full max-w-md">
-      <CardHeader class="space-y-1">
-        <CardTitle class="text-2xl font-bold text-center">Welcome Back</CardTitle>
-        <CardDescription class="text-center">
-          Enter your credentials to access your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <div class="space-y-2">
-            <Label for="email">Email</Label>
-            <Input
-              id="email"
-              v-model="email"
-              type="email"
-              placeholder="john@example.com"
-              required
-            />
-          </div>
-          <div class="space-y-2">
-            <Label for="password">Password</Label>
-            <Input
-              id="password"
-              v-model="password"
-              type="password"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          <Button type="submit" class="w-full" :disabled="loading">
-            {{ loading ? 'Logging in...' : 'Login' }}
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter class="flex flex-col space-y-2">
-        <p class="text-xs text-muted-foreground text-center">
-          This is a demo login. Use any email and password.
-        </p>
-      </CardFooter>
-    </Card>
+  <div class="min-h-screen flex items-center justify-center bg-background p-4">
+    <div class="w-full max-w-md space-y-8">
+      <div class="text-center space-y-2">
+        <h1 class="text-3xl font-bold">H2H Ticketing</h1>
+        <p class="text-muted-foreground">Masuk ke dashboard admin</p>
+      </div>
+
+      <Card>
+        <CardContent class="pt-6">
+          <form @submit.prevent="handleLogin" class="space-y-4">
+            <div class="space-y-2">
+              <Label for="email">Email</Label>
+              <Input
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            
+            <div class="space-y-2">
+              <Label for="password">Password</Label>
+              <Input
+                id="password"
+                v-model="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            
+            <Button type="submit" class="w-full" :disabled="loading">
+              <span v-if="loading">Memproses...</span>
+              <span v-else>Masuk</span>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div v-if="error" class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+        <p>{{ error }}</p>
+      </div>
+      
+      <div class="text-center text-sm text-muted-foreground bg-muted px-4 py-3 rounded-lg">
+        <p class="font-medium mb-1">Kredensial Login:</p>
+        <p><strong>Email:</strong> admin@example.com</p>
+        <p><strong>Password:</strong> password</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -47,25 +56,33 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/toast/use-toast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { toast } = useToast()
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
+const error = ref('')
 
 const handleLogin = async () => {
   loading.value = true
+  error.value = ''
   try {
     await authStore.login({ email: email.value, password: password.value })
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('Login failed:', error)
+    toast({
+      title: 'Login berhasil!',
+      description: 'Selamat datang kembali',
+    })
+    router.push('/admin/dashboard')
+  } catch (err: any) {
+    error.value = err.message || 'Login gagal. Periksa email dan password Anda.'
   } finally {
     loading.value = false
   }

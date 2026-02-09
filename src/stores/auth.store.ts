@@ -13,43 +13,45 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Mock login - replace with actual API call when backend is ready
     async login(credentials: LoginCredentials) {
       try {
-        // Mock response - replace with actual API call
-        const mockUser: User = {
-          id: 1,
-          name: 'John Doe',
-          email: credentials.email,
-        }
+        const { api } = await import('@/services/api.service')
+        const response = await api.post('/v1/auth/login', credentials)
         
-        const mockToken = 'mock-jwt-token-' + Date.now()
+        const { user, access_token } = response.data.data
 
         // Save to state
-        this.token = mockToken
-        this.user = mockUser
+        this.token = access_token
+        this.user = user
         this.isLoggedIn = true
 
         // Save to localStorage
-        localStorage.setItem('token', mockToken)
-        localStorage.setItem('user', JSON.stringify(mockUser))
+        localStorage.setItem('token', access_token)
+        localStorage.setItem('user', JSON.stringify(user))
 
         return { success: true }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Login failed:', error)
-        return { success: false, error }
+        throw error
       }
     },
 
-    logout() {
-      // Clear state
-      this.token = null
-      this.user = null
-      this.isLoggedIn = false
+    async logout() {
+      try {
+        const { api } = await import('@/services/api.service')
+        await api.post('/v1/auth/logout')
+      } catch (error) {
+        console.error('Logout API failed:', error)
+      } finally {
+        // Clear state
+        this.token = null
+        this.user = null
+        this.isLoggedIn = false
 
-      // Clear localStorage
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+        // Clear localStorage
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
     },
 
     checkAuth() {
