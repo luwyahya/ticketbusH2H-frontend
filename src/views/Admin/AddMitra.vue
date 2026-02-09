@@ -4,14 +4,14 @@
     <SidebarInset>
       <SiteHeader />
       
-      <div class="flex flex-1 flex-col">
-        <div class="flex flex-col gap-6 p-6">
+      <div class="flex flex-1 flex-col items-center">
+        <div class="flex flex-col gap-6 p-6 w-full max-w-2xl">
           <div>
             <h1 class="text-3xl font-bold">Tambah Mitra</h1>
             <p class="text-muted-foreground">Tambahkan mitra baru ke sistem</p>
           </div>
 
-          <Card class="max-w-2xl">
+          <Card>
             <CardHeader>
               <CardTitle>Informasi Mitra</CardTitle>
               <CardDescription>Masukkan data mitra yang akan didaftarkan</CardDescription>
