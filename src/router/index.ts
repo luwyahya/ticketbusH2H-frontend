@@ -16,37 +16,52 @@ const routes: RouteRecordRaw[] = [
   // ===== ADMIN =====
   {
     path: '/admin/dashboard',
-    component: () => import('@/views/admin/AdminDashboard.vue'),
+    component: () => import('@/views/Admin/AdminDashboard.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/mitra',
-    component: () => import('@/views/admin/MitraManagement.vue'),
+    component: () => import('@/views/Admin/MitraManagement.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/mitra/add',
-    component: () => import('@/views/admin/AddMitra.vue'),
+    component: () => import('@/views/Admin/AddMitra.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/mitra/:id',
+    component: () => import('@/views/Admin/MitraDetail.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/topup-approval',
+    component: () => import('@/views/Admin/TopupApproval.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/users',
-    component: () => import('@/views/admin/UserManagement.vue'),
+    component: () => import('@/views/Admin/UserManagement.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/role-management',
-    component: () => import('@/views/admin/RoleManagement.vue'),
+    component: () => import('@/views/Admin/RoleManagement.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/role-permissions',
+    component: () => import('@/views/Admin/RolePermissions.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/reports',
-    component: () => import('@/views/admin/ReportView.vue'),
+    component: () => import('@/views/Admin/ReportView.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/profile',
-    component: () => import('@/views/admin/AdminProfile.vue'),
+    component: () => import('@/views/Admin/AdminProfile.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
 

@@ -34,30 +34,24 @@
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Instansi</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Bergabung</TableHead>
                     <TableHead>Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow v-for="user in userStore.users" :key="user.id">
-                    <TableCell class="font-medium">{{ user.nama }}</TableCell>
+                    <TableCell class="font-medium">{{ user.name }}</TableCell>
                     <TableCell>{{ user.email }}</TableCell>
                     <TableCell>
                       <Badge :class="getRoleBadgeClass(user.role)">
                         <BadgeCheck v-if="user.role === 'admin'" class="h-3 w-3 mr-1" />
                         <Bus v-if="user.role === 'mitra'" class="h-3 w-3 mr-1" />
-                        {{ user.role }}
+                        {{ user.role || '-' }}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span v-if="user.instansi" class="text-sm text-muted-foreground">{{ user.instansi }}</span>
+                      <span v-if="user.mitra" class="text-sm text-muted-foreground">{{ user.mitra.name }}</span>
                       <span v-else class="text-sm text-muted-foreground">-</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge :variant="user.status === 'aktif' ? 'default' : 'secondary'">
-                        {{ user.status }}
-                      </Badge>
                     </TableCell>
                     <TableCell>{{ formatDate(user.created_at) }}</TableCell>
                     <TableCell>
@@ -65,12 +59,8 @@
                         <Button size="sm" variant="outline" @click="editUser(user)">
                           <Edit class="h-4 w-4" />
                         </Button>
-                        <Button 
-                          size="sm" 
-                          :variant="user.status === 'aktif' ? 'destructive' : 'default'"
-                          @click="toggleUserStatus(user)"
-                        >
-                          {{ user.status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
+                        <Button size="sm" variant="destructive" @click="deleteUser(user)">
+                          Hapus
                         </Button>
                       </div>
                     </TableCell>
@@ -124,6 +114,50 @@
               </form>
             </DialogContent>
           </Dialog>
+          <!-- Edit User Dialog -->
+          <Dialog v-model:open="showEditDialog">
+            <DialogContent>
+              <DialogTitle>Edit User</DialogTitle>
+              <form @submit.prevent="handleEditUser" class="space-y-4">
+                <div>
+                  <Label for="edit-nama">Nama</Label>
+                  <Input id="edit-nama" v-model="formData.nama" required />
+                </div>
+                <div>
+                  <Label for="edit-email">Email</Label>
+                  <Input id="edit-email" v-model="formData.email" type="email" required />
+                </div>
+                <div>
+                  <Label for="edit-role">Role</Label>
+                  <Select v-model="formData.role" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="mitra">Mitra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div v-if="formData.role === 'mitra'">
+                  <Label for="edit-instansi">Instansi</Label>
+                  <Input id="edit-instansi" v-model="formData.instansi" placeholder="Nama perusahaan shuttle" />
+                </div>
+                <div>
+                  <Label for="edit-password">Password (kosongkan jika tidak diubah)</Label>
+                  <Input id="edit-password" v-model="formData.password" type="password" />
+                </div>
+                <div class="flex gap-2 pt-4">
+                  <Button type="submit" :disabled="userStore.loading">
+                    {{ userStore.loading ? 'Menyimpan...' : 'Simpan' }}
+                  </Button>
+                  <Button type="button" variant="outline" @click="showEditDialog = false">
+                    Batal
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </SidebarInset>
@@ -146,9 +180,14 @@ import SiteHeader from '@/components/SiteHeader.vue'
 import { Plus, Edit, BadgeCheck, Bus } from 'lucide-vue-next'
 import { useUserStore } from '@/stores/user.store'
 import type { User, UserFormData } from '@/types/user.types'
+import { useToast } from '@/components/ui/toast'
+
+const { toast } = useToast()
 
 const userStore = useUserStore()
 const showAddDialog = ref(false)
+const showEditDialog = ref(false)
+const editingUser = ref<User | null>(null)
 const formData = ref<UserFormData>({
   nama: '',
   email: '',
@@ -166,22 +205,65 @@ const handleAddUser = async () => {
     await userStore.createUser(formData.value)
     showAddDialog.value = false
     formData.value = { nama: '', email: '', role: '', instansi: '', password: '' }
+    toast({
+      title: 'Berhasil',
+      description: 'User berhasil ditambahkan',
+    })
   } catch (error) {
-    console.error('Failed to add user:', error)
+    toast({
+      title: 'Gagal',
+      description: 'Gagal menambahkan user',
+      variant: 'destructive',
+    })
   }
 }
 
 const editUser = (user: User) => {
-  // TODO: Implement edit functionality
-  console.log('Edit user:', user)
+  editingUser.value = user
+  formData.value = {
+    nama: user.name,
+    email: user.email,
+    role: user.role || '',
+    instansi: user.mitra?.name || '',
+    password: ''
+  }
+  showEditDialog.value = true
 }
 
-const toggleUserStatus = async (user: User) => {
-  const newStatus = user.status === 'aktif' ? 'nonaktif' : 'aktif'
+const handleEditUser = async () => {
+  if (!editingUser.value) return
   try {
-    await userStore.updateUserStatus(user.id, newStatus)
+    await userStore.updateUser(editingUser.value.id, formData.value)
+    showEditDialog.value = false
+    formData.value = { nama: '', email: '', role: '', instansi: '', password: '' }
+    editingUser.value = null
+    toast({
+      title: 'Berhasil',
+      description: 'User berhasil diupdate',
+    })
   } catch (error) {
-    console.error('Failed to update user status:', error)
+    toast({
+      title: 'Gagal',
+      description: 'Gagal mengupdate user',
+      variant: 'destructive',
+    })
+  }
+}
+
+const deleteUser = async (user: User) => {
+  if (!confirm(`Hapus user ${user.name}?`)) return
+  try {
+    await userStore.deleteUser(user.id)
+    toast({
+      title: 'Berhasil',
+      description: 'User berhasil dihapus',
+    })
+  } catch (error) {
+    toast({
+      title: 'Gagal',
+      description: 'Gagal menghapus user',
+      variant: 'destructive',
+    })
   }
 }
 

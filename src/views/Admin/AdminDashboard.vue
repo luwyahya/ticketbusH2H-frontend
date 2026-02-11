@@ -11,40 +11,54 @@
             <p class="text-muted-foreground mt-1">Overview statistik dan aktivitas sistem</p>
           </div>
 
-          <div v-if="adminStore.loading" class="flex items-center justify-center py-8">
+          <div v-if="loading" class="flex items-center justify-center py-8">
             <p class="text-muted-foreground">Loading...</p>
           </div>
 
-          <div v-else-if="adminStore.dashboardData" class="space-y-6">
+          <div v-else-if="dashboardData" class="space-y-6">
             <!-- Stats Cards -->
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle class="text-sm font-medium">Transaksi Hari Ini</CardTitle>
-                  <TrendingUp class="h-4 w-4 text-muted-foreground" />
+                  <CreditCard class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(adminStore.dashboardData.total_transaksi_hari_ini) }}</div>
+                  <div class="text-2xl font-bold">{{ dashboardData.total_transactions_today || 0 }}</div>
+                  <p class="text-xs text-muted-foreground">Transaksi hari ini</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle class="text-sm font-medium">Transaksi Bulan Ini</CardTitle>
-                  <Calendar class="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(adminStore.dashboardData.total_transaksi_bulan_berjalan) }}</div>
+                  <div class="text-2xl font-bold">{{ dashboardData.total_transactions_month || 0 }}</div>
+                  <p class="text-xs text-muted-foreground">Transaksi bulan ini</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle class="text-sm font-medium">Total Saldo Mitra</CardTitle>
+                  <Wallet class="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div class="text-2xl font-bold">{{ formatCurrency(balance) }}</div>
+                  <p class="text-xs text-muted-foreground">Saldo semua mitra</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle class="text-sm font-medium">Total Deposit Masuk</CardTitle>
-                  <Wallet class="h-4 w-4 text-muted-foreground" />
+                  <TrendingUp class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(adminStore.dashboardData.total_deposit_masuk) }}</div>
+                  <div class="text-2xl font-bold">{{ formatCurrency(dashboardData.total_deposit || 0) }}</div>
+                  <p class="text-xs text-muted-foreground">Total deposit</p>
                 </CardContent>
               </Card>
 
@@ -54,37 +68,61 @@
                   <DollarSign class="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(adminStore.dashboardData.total_fee_mitra) }}</div>
+                  <div class="text-2xl font-bold">{{ formatCurrency(dashboardData.total_fee_mitra || 0) }}</div>
+                  <p class="text-xs text-muted-foreground">Total fee mitra</p>
                 </CardContent>
               </Card>
             </div>
 
-            <!-- Grafik & Aktivitas -->
-            <div class="grid gap-4 md:grid-cols-2">
-              <!-- Grafik Transaksi -->
-              <!-- <ChartTransaksi :data="adminStore.dashboardData.grafik_transaksi" /> -->
-
-              <!-- Aktivitas Terbaru -->
-              <Card>
-                <CardHeader>
-                  <CardTitle>Aktivitas Terbaru</CardTitle>
-                  <CardDescription>Log aktivitas sistem terkini</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div class="space-y-4">
-                    <div v-for="aktivitas in adminStore.dashboardData.aktivitas_terbaru" :key="aktivitas.id" class="flex items-start gap-3">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-full" :class="getActivityBgColor(aktivitas.tipe)">
-                        <component :is="getActivityIcon(aktivitas.tipe)" class="h-4 w-4" :class="getActivityIconColor(aktivitas.tipe)" />
-                      </div>
-                      <div class="flex-1 space-y-1">
-                        <p class="text-sm font-medium">{{ aktivitas.deskripsi }}</p>
-                        <p class="text-xs text-muted-foreground">{{ formatDateTime(aktivitas.waktu) }}</p>
-                      </div>
+            <!-- Transaction Chart -->
+            <Card>
+              <CardHeader>
+                <CardTitle>Transaksi Terbaru</CardTitle>
+                <CardDescription>Daftar transaksi terkini</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div class="space-y-3">
+                  <div v-if="!dashboardData.chart_transactions?.length" class="text-sm text-muted-foreground text-center py-4">
+                    Belum ada transaksi
+                  </div>
+                  <div v-for="trx in dashboardData.chart_transactions" :key="trx.id" class="flex items-center justify-between border-b pb-3 last:border-0">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium">{{ trx.trx_code }}</p>
+                      <p class="text-xs text-muted-foreground">{{ trx.route }} • {{ formatDateTime(trx.created_at) }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-medium">{{ formatCurrency(parseFloat(trx.amount)) }}</p>
+                      <Badge :variant="getStatusVariant(trx.status)" class="text-xs">{{ trx.status }}</Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <!-- Recent Activities -->
+            <Card>
+              <CardHeader>
+                <CardTitle>Aktivitas Terbaru</CardTitle>
+                <CardDescription>Aktivitas sistem terkini</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div class="space-y-3">
+                  <div v-if="!dashboardData.recent_activities?.length" class="text-sm text-muted-foreground text-center py-4">
+                    Belum ada aktivitas
+                  </div>
+                  <div v-for="activity in dashboardData.recent_activities" :key="activity.id" class="flex items-center justify-between border-b pb-3 last:border-0">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium">{{ activity.trx_code }}</p>
+                      <p class="text-xs text-muted-foreground">{{ activity.route }} • {{ formatDateTime(activity.created_at) }}</p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-sm font-medium">{{ formatCurrency(parseFloat(activity.amount)) }}</p>
+                      <Badge :variant="getStatusVariant(activity.status)" class="text-xs">{{ activity.status }}</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -93,20 +131,44 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
-//import ChartTransaksi from '@/components/ChartTransaksi.vue'
-import { TrendingUp, Calendar, Wallet, DollarSign, Activity, CreditCard, UserPlus, Banknote } from 'lucide-vue-next'
-import { useAdminStore } from '@/stores/admin.store'
+import { CreditCard, DollarSign, Wallet, TrendingUp } from 'lucide-vue-next'
+import { api } from '@/services/api.service'
 
-const adminStore = useAdminStore()
+const loading = ref(false)
+const dashboardData = ref<any>(null)
+const balance = ref<number>(0)
 
 onMounted(() => {
-  adminStore.fetchDashboardData()
+  fetchDashboardData()
+  fetchBalance()
 })
+
+const fetchDashboardData = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/v1/dashboard/admin')
+    dashboardData.value = response.data.data
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchBalance = async () => {
+  try {
+    const response = await api.get('/v1/balance')
+    balance.value = response.data.data?.total_balance || 0
+  } catch (error) {
+    console.error('Failed to fetch balance:', error)
+  }
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -125,33 +187,11 @@ const formatDateTime = (datetime: string) => {
   })
 }
 
-const getActivityIcon = (tipe: string) => {
-  switch (tipe) {
-    case 'transaksi': return CreditCard
-    case 'deposit': return Wallet
-    case 'registrasi': return UserPlus
-    case 'fee': return Banknote
-    default: return Activity
-  }
-}
-
-const getActivityBgColor = (tipe: string) => {
-  switch (tipe) {
-    case 'transaksi': return 'bg-blue-100'
-    case 'deposit': return 'bg-green-100'
-    case 'registrasi': return 'bg-purple-100'
-    case 'fee': return 'bg-orange-100'
-    default: return 'bg-gray-100'
-  }
-}
-
-const getActivityIconColor = (tipe: string) => {
-  switch (tipe) {
-    case 'transaksi': return 'text-blue-600'
-    case 'deposit': return 'text-green-600'
-    case 'registrasi': return 'text-purple-600'
-    case 'fee': return 'text-orange-600'
-    default: return 'text-gray-600'
-  }
+const getStatusVariant = (status: string) => {
+  const statusLower = status.toLowerCase()
+  if (statusLower === 'success' || statusLower === 'approved') return 'default'
+  if (statusLower === 'pending') return 'secondary'
+  if (statusLower === 'failed' || statusLower === 'rejected') return 'destructive'
+  return 'outline'
 }
 </script>

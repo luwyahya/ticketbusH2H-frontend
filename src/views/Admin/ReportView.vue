@@ -35,17 +35,9 @@
                 </div>
                 <div class="space-y-2">
                   <Label>Mitra</Label>
-                  <Select v-model="selectedMitra">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih mitra" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Mitra</SelectItem>
-                      <SelectItem value="1">PT Mitra Sejahtera</SelectItem>
-                      <SelectItem value="2">CV Transportasi Jaya</SelectItem>
-                      <SelectItem value="3">UD Berkah Transport</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Button variant="outline" class="w-full justify-start" @click="showMitraDialog = true">
+                    {{ selectedMitraName || 'Pilih mitra' }}
+                  </Button>
                 </div>
                 <div class="space-y-2">
                   <Label>Jenis Laporan</Label>
@@ -129,6 +121,35 @@
         </div>
       </div>
     </SidebarInset>
+
+    <!-- Mitra Selection Dialog -->
+    <Dialog v-model:open="showMitraDialog">
+      <DialogContent>
+        <DialogTitle>Pilih Mitra</DialogTitle>
+        <DialogDescription>Pilih mitra untuk filter laporan</DialogDescription>
+        <div class="space-y-2 py-4 max-h-[60vh] overflow-y-auto">
+          <div v-if="loadingMitra" class="text-center py-4 text-muted-foreground">
+            Loading...
+          </div>
+          <div 
+            v-else
+            v-for="mitra in mitraList" 
+            :key="mitra.id"
+            @click="selectMitra(mitra)"
+            class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted cursor-pointer"
+            :class="{ 'bg-muted': selectedMitra === mitra.id }"
+          >
+            <div>
+              <div class="font-medium">{{ mitra.name }}</div>
+              <div class="text-sm text-muted-foreground">{{ mitra.email || '-' }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="showMitraDialog = false">Tutup</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </SidebarProvider>
 </template>
 
@@ -141,23 +162,23 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
 import { Filter, FileText, FileSpreadsheet } from 'lucide-vue-next'
 import { useReportStore } from '@/stores/report.store'
+import { api } from '@/services/api.service'
 import type { ReportFilter } from '@/types/report.types'
 
 const reportStore = useReportStore()
 
+const showMitraDialog = ref(false)
 const selectedMitra = ref('all')
+const selectedMitraName = ref('Semua Mitra')
 const selectedReportType = ref('all')
+const mitraList = ref<any[]>([])
+const loadingMitra = ref(false)
 
 const filters = ref<ReportFilter>({
   start_date: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -174,8 +195,27 @@ watch(selectedReportType, (val) => {
 })
 
 onMounted(() => {
+  // Clear old data
+  reportStore.$reset()
+  fetchMitraList()
   handleFilter()
 })
+
+const fetchMitraList = async () => {
+  loadingMitra.value = true
+  try {
+    const response = await api.get('/v1/mitra')
+    mitraList.value = [
+      { id: 'all', name: 'Semua Mitra', email: 'Tampilkan semua' },
+      ...response.data.data
+    ]
+  } catch (error) {
+    console.error('Failed to fetch mitra:', error)
+    mitraList.value = [{ id: 'all', name: 'Semua Mitra', email: 'Tampilkan semua' }]
+  } finally {
+    loadingMitra.value = false
+  }
+}
 
 const handleFilter = () => {
   reportStore.fetchReports(filters.value)
@@ -183,6 +223,7 @@ const handleFilter = () => {
 
 const handleReset = () => {
   selectedMitra.value = 'all'
+  selectedMitraName.value = 'Semua Mitra'
   selectedReportType.value = 'all'
   filters.value = {
     start_date: new Date(new Date().setDate(1)).toISOString().split('T')[0],
@@ -192,19 +233,27 @@ const handleReset = () => {
   handleFilter()
 }
 
+const selectMitra = (mitra: any) => {
+  selectedMitra.value = mitra.id
+  selectedMitraName.value = mitra.name
+  showMitraDialog.value = false
+}
+
 const formatDate = (date: string) => {
+  if (!date) return '-'
   return new Date(date).toLocaleDateString('id-ID', {
     day: '2-digit',
-    month: 'short',
-    year: 'numeric',
+    month: '2-digit',
+    year: 'numeric'
   })
 }
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (amount: number) => {
+  if (!amount && amount !== 0) return 'Rp0'
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(value)
+    minimumFractionDigits: 0
+  }).format(amount)
 }
 </script>

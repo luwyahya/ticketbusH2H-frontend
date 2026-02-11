@@ -4,233 +4,162 @@
     <SidebarInset>
       <SiteHeader />
       
-      <div class="flex flex-1 flex-col">
-        <div class="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+      <div class="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+        <div class="flex items-center justify-between">
           <div>
             <h1 class="text-3xl font-bold tracking-tight">Manajemen Mitra</h1>
-            <p class="text-muted-foreground mt-1">Kelola dan pantau semua mitra</p>
+            <p class="text-muted-foreground mt-1">Kelola data mitra dan partner</p>
           </div>
+          <Button @click="$router.push('/admin/mitra/add')">
+            <Plus class="mr-2 h-4 w-4" />
+            Tambah Mitra
+          </Button>
+        </div>
 
-          <div v-if="mitraStore.loading" class="flex items-center justify-center py-8">
-            <p class="text-muted-foreground">Loading...</p>
-          </div>
+        <!-- Pending Approval Table -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Mitra Menunggu Approval</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div v-if="loading" class="text-center py-8">Loading...</div>
+            <div v-else-if="pendingMitras.length === 0" class="text-center py-8 text-muted-foreground">
+              Tidak ada mitra yang menunggu approval
+            </div>
+            <Table v-else>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama Mitra</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telepon</TableHead>
+                  <TableHead>Tanggal Daftar</TableHead>
+                  <TableHead class="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="mitra in pendingMitras" :key="mitra.id">
+                  <TableCell class="font-medium">{{ mitra.nama }}</TableCell>
+                  <TableCell>{{ mitra.email }}</TableCell>
+                  <TableCell>{{ mitra.phone || '-' }}</TableCell>
+                  <TableCell>{{ formatDate(mitra.tanggal_bergabung) }}</TableCell>
+                  <TableCell class="text-right space-x-2">
+                    <Button variant="ghost" size="sm" @click="viewDetail(mitra.id)">Detail</Button>
+                    <Button variant="default" size="sm" @click="approveMitra(mitra.id)">Approve</Button>
+                    <Button variant="destructive" size="sm" @click="rejectMitra(mitra.id)">Reject</Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
-          <div v-else class="space-y-6">
-            <!-- Stats Summary -->
-            <div class="grid gap-4 md:grid-cols-4">
-              <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle class="text-sm font-medium">Total Mitra</CardTitle>
-                  <Users class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">{{ mitraStore.mitraList.length }}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle class="text-sm font-medium">Mitra Aktif</CardTitle>
-                  <CheckCircle class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">{{ activeMitraCount }}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle class="text-sm font-medium">Total Deposit</CardTitle>
-                  <Wallet class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(totalDeposit) }}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle class="text-sm font-medium">Total Fee</CardTitle>
-                  <DollarSign class="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div class="text-2xl font-bold">{{ formatCurrency(totalFee) }}</div>
-                </CardContent>
-              </Card>
+        <!-- Active/Rejected Table -->
+        <Card>
+          <CardHeader>
+            <CardTitle>Daftar Mitra</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="flex-1">
+                <Input v-model="searchQuery" placeholder="Cari nama atau email..." @input="handleSearch" />
+              </div>
+              <Select v-model="statusFilter" @update:model-value="handleStatusFilter">
+                <SelectTrigger class="w-[180px]">
+                  <SelectValue placeholder="Filter Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="active">Aktif</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <!-- Filters and Controls -->
-            <Card>
-              <CardContent class="p-4">
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                  <div class="flex flex-col sm:flex-row gap-4 flex-1">
-                    <div class="flex-1">
-                      <Input 
-                        placeholder="Cari nama atau email mitra..." 
-                        v-model="searchQuery"
-                        @input="handleSearch"
-                        class="max-w-sm"
-                      />
-                    </div>
-                    <div>
-                      <Select v-model="statusFilter" @update:model-value="handleStatusFilter">
-                        <SelectTrigger class="w-[180px]">
-                          <SelectValue placeholder="Pilih status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Semua Status</SelectItem>
-                          <SelectItem value="aktif">Aktif</SelectItem>
-                          <SelectItem value="nonaktif">Nonaktif</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Label class="text-sm">Show:</Label>
-                    <Select v-model="limitValue" @update:model-value="handleLimitChange">
-                      <SelectTrigger class="w-[80px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5</SelectItem>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <!-- Mitra Table -->
-            <Card>
-              <CardHeader>
-                <CardTitle>Daftar Mitra</CardTitle>
-                <CardDescription>Informasi lengkap semua mitra terdaftar</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nama Mitra</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Saldo Deposit</TableHead>
-                      <TableHead>Total Transaksi</TableHead>
-                      <TableHead>Total Fee</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Bergabung</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-for="mitra in mitraStore.paginatedList" :key="mitra.id" class="cursor-pointer hover:bg-muted/50" @click="showMitraDetail(mitra)">
-                      <TableCell class="font-medium">{{ mitra.nama }}</TableCell>
-                      <TableCell>{{ mitra.email }}</TableCell>
-                      <TableCell>{{ formatCurrency(mitra.saldo_deposit) }}</TableCell>
-                      <TableCell>{{ mitra.total_transaksi.toLocaleString() }}</TableCell>
-                      <TableCell>{{ formatCurrency(mitra.total_fee) }}</TableCell>
-                      <TableCell>
-                        <Badge :variant="mitra.status === 'aktif' ? 'default' : 'destructive'">
-                          {{ mitra.status }}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{{ formatDate(mitra.tanggal_bergabung) }}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </CardContent>
-              
-              <!-- Pagination -->
-              <div class="flex items-center justify-between px-6 py-4 border-t">
-                <div class="text-sm text-muted-foreground">
-                  Showing {{ (mitraStore.currentPage - 1) * mitraStore.limit + 1 }} to 
-                  {{ Math.min(mitraStore.currentPage * mitraStore.limit, mitraStore.filteredList.length) }} 
-                  of {{ mitraStore.filteredList.length }} entries
-                </div>
-                <div class="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    :disabled="mitraStore.currentPage === 1"
-                    @click="mitraStore.setPage(mitraStore.currentPage - 1)"
-                  >
-                    Previous
-                  </Button>
-                  <div class="flex gap-1">
-                    <Button 
-                      v-for="page in visiblePages" 
-                      :key="page"
-                      :variant="page === mitraStore.currentPage ? 'default' : 'outline'"
-                      size="sm"
-                      @click="mitraStore.setPage(page)"
-                      class="w-8"
-                    >
-                      {{ page }}
-                    </Button>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    :disabled="mitraStore.currentPage === mitraStore.totalPages"
-                    @click="mitraStore.setPage(mitraStore.currentPage + 1)"
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
+            <div v-if="loading" class="text-center py-8">Loading...</div>
+            <div v-else-if="activeMitras.length === 0" class="text-center py-8 text-muted-foreground">
+              Tidak ada data mitra
+            </div>
+            <Table v-else>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama Mitra</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Saldo Deposit</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Tanggal Bergabung</TableHead>
+                  <TableHead class="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="mitra in activeMitras" :key="mitra.id">
+                  <TableCell class="font-medium">{{ mitra.nama }}</TableCell>
+                  <TableCell>{{ mitra.email }}</TableCell>
+                  <TableCell>{{ formatCurrency(mitra.saldo_deposit) }}</TableCell>
+                  <TableCell>
+                    <Badge :variant="mitra.status === 'active' ? 'default' : 'destructive'">
+                      {{ mitra.status }}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{{ formatDate(mitra.tanggal_bergabung) }}</TableCell>
+                  <TableCell class="text-right">
+                    <Button variant="ghost" size="sm" @click="viewDetail(mitra.id)">Detail</Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </SidebarInset>
 
-    <!-- Mitra Detail Dialog -->
-    <Dialog v-model:open="showDetailDialog">
+    <!-- Detail Dialog -->
+    <Dialog v-model:open="detailDialogOpen">
       <DialogContent class="max-w-2xl">
-        <DialogTitle>Detail Mitra</DialogTitle>
-        <div v-if="selectedMitra" class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <Label class="text-sm font-medium">Nama Mitra</Label>
-              <p class="text-lg font-semibold">{{ selectedMitra.nama }}</p>
-            </div>
-            <div>
-              <Label class="text-sm font-medium">Email</Label>
-              <p>{{ selectedMitra.email }}</p>
-            </div>
-            <div>
-              <Label class="text-sm font-medium">Status</Label>
-              <Badge :variant="selectedMitra.status === 'aktif' ? 'default' : 'secondary'">
-                {{ selectedMitra.status }}
-              </Badge>
-            </div>
-            <div>
-              <Label class="text-sm font-medium">Tanggal Bergabung</Label>
-              <p>{{ formatDate(selectedMitra.tanggal_bergabung) }}</p>
-            </div>
+        <div class="space-y-4">
+          <div>
+            <DialogTitle>Detail Mitra</DialogTitle>
+            <DialogDescription>Informasi lengkap mitra</DialogDescription>
           </div>
           
-          <Separator />
+          <div v-if="loadingDetail" class="text-center py-8">Loading...</div>
           
-          <div class="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent class="p-4">
-                <div class="text-sm font-medium text-muted-foreground">Saldo Deposit</div>
-                <div class="text-2xl font-bold">{{ formatCurrency(selectedMitra.saldo_deposit) }}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent class="p-4">
-                <div class="text-sm font-medium text-muted-foreground">Total Transaksi</div>
-                <div class="text-2xl font-bold">{{ selectedMitra.total_transaksi.toLocaleString() }}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent class="p-4">
-                <div class="text-sm font-medium text-muted-foreground">Total Fee</div>
-                <div class="text-2xl font-bold">{{ formatCurrency(selectedMitra.total_fee) }}</div>
-              </CardContent>
-            </Card>
+          <div v-else-if="selectedMitra" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-muted-foreground">Kode Mitra</p>
+                <p class="font-medium">{{ selectedMitra.code }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Status</p>
+                <Badge :variant="selectedMitra.status === 'active' ? 'default' : selectedMitra.status === 'pending' ? 'secondary' : 'destructive'">
+                  {{ selectedMitra.status }}
+                </Badge>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Nama</p>
+                <p class="font-medium">{{ selectedMitra.name }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Email</p>
+                <p class="font-medium">{{ selectedMitra.email }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Telepon</p>
+                <p class="font-medium">{{ selectedMitra.phone }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Saldo Deposit</p>
+                <p class="font-medium">{{ formatCurrency(selectedMitra.balance) }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">Tanggal Bergabung</p>
+                <p class="font-medium">{{ formatDate(selectedMitra.created_at) }}</p>
+              </div>
+            </div>
+            
+            <div class="flex justify-end pt-4">
+              <Button variant="outline" @click="detailDialogOpen = false">Tutup</Button>
+            </div>
           </div>
         </div>
       </DialogContent>
@@ -240,62 +169,133 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
-import { Users, CheckCircle, Wallet, DollarSign } from 'lucide-vue-next'
-import { useMitraManagementStore } from '@/stores/mitraManagement.store'
-import type { MitraListItem } from '@/types/admin.types'
+import { Plus } from 'lucide-vue-next'
+import { api } from '@/services/api.service'
+import { mitraService } from '@/services/mitra.service'
+import { useToast } from '@/components/ui/toast'
 
-const mitraStore = useMitraManagementStore()
-const showDetailDialog = ref(false)
-const selectedMitra = ref<MitraListItem | null>(null)
+const { toast } = useToast()
+const router = useRouter()
+
+const loading = ref(false)
+const allMitras = ref<any[]>([])
 const searchQuery = ref('')
 const statusFilter = ref('all')
-const limitValue = ref('10')
+const detailDialogOpen = ref(false)
+const loadingDetail = ref(false)
+const selectedMitra = ref<any>(null)
 
 onMounted(() => {
-  mitraStore.fetchMitraList()
+  fetchMitras()
 })
 
-const activeMitraCount = computed(() => 
-  mitraStore.filteredList.filter(mitra => mitra.status === 'aktif').length
-)
+const fetchMitras = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/v1/mitra')
+    allMitras.value = response.data.data || []
+  } catch (error: any) {
+    console.error('Failed to fetch mitras:', error)
+    toast({ 
+      title: 'Error', 
+      description: 'Gagal memuat data mitra. Silakan coba lagi.', 
+      variant: 'destructive' 
+    })
+    allMitras.value = []
+  } finally {
+    loading.value = false
+  }
+}
 
-const totalDeposit = computed(() => 
-  mitraStore.filteredList.reduce((sum, mitra) => sum + mitra.saldo_deposit, 0)
-)
+const pendingMitras = computed(() => {
+  return allMitras.value
+    .filter(m => m.status === 'pending')
+    .map(m => ({
+      id: m.id,
+      nama: m.name,
+      email: m.email,
+      phone: m.phone,
+      saldo_deposit: m.balance,
+      status: m.status,
+      tanggal_bergabung: m.created_at
+    }))
+})
 
-const totalFee = computed(() => 
-  mitraStore.filteredList.reduce((sum, mitra) => sum + mitra.total_fee, 0)
-)
-
-const visiblePages = computed(() => {
-  const total = mitraStore.totalPages
-  const current = mitraStore.currentPage
-  const pages = []
+const activeMitras = computed(() => {
+  let filtered = allMitras.value.filter(m => m.status !== 'pending')
   
-  for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-    pages.push(i)
+  if (searchQuery.value) {
+    filtered = filtered.filter(m => 
+      m.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
   }
   
-  return pages
+  if (statusFilter.value !== 'all') {
+    filtered = filtered.filter(m => m.status === statusFilter.value)
+  }
+  
+  return filtered.map(m => ({
+    id: m.id,
+    nama: m.name,
+    email: m.email,
+    saldo_deposit: m.balance,
+    status: m.status,
+    tanggal_bergabung: m.created_at
+  }))
 })
+
+const handleSearch = () => {
+  // Trigger computed property recalculation
+}
+
+const handleStatusFilter = () => {
+  // Trigger computed property recalculation
+}
+
+const viewDetail = async (id: number) => {
+  detailDialogOpen.value = true
+  loadingDetail.value = true
+  try {
+    const response = await mitraService.getMitraDetail(id)
+    selectedMitra.value = response.data
+  } catch (err) {
+    console.error('Failed to fetch mitra detail:', err)
+  } finally {
+    loadingDetail.value = false
+  }
+}
+
+const approveMitra = async (id: number) => {
+  try {
+    await api.post(`/v1/mitra/${id}/approve`)
+    toast({ title: 'Berhasil', description: 'Mitra berhasil diapprove' })
+    fetchMitras()
+  } catch (error) {
+    toast({ title: 'Gagal', description: 'Gagal approve mitra', variant: 'destructive' })
+  }
+}
+
+const rejectMitra = async (id: number) => {
+  try {
+    await api.post(`/v1/mitra/${id}/reject`)
+    toast({ title: 'Berhasil', description: 'Mitra berhasil direject' })
+    fetchMitras()
+  } catch (error) {
+    toast({ title: 'Gagal', description: 'Gagal reject mitra', variant: 'destructive' })
+  }
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID', {
@@ -306,27 +306,11 @@ const formatCurrency = (value: number) => {
 }
 
 const formatDate = (date: string) => {
+  if (!date) return '-'
   return new Date(date).toLocaleDateString('id-ID', {
     day: 'numeric',
-    month: 'short',
+    month: 'long',
     year: 'numeric',
   })
-}
-
-const showMitraDetail = (mitra: MitraListItem) => {
-  selectedMitra.value = mitra
-  showDetailDialog.value = true
-}
-
-const handleSearch = () => {
-  mitraStore.setSearch(searchQuery.value)
-}
-
-const handleStatusFilter = () => {
-  mitraStore.setStatusFilter(statusFilter.value)
-}
-
-const handleLimitChange = () => {
-  mitraStore.setLimit(parseInt(limitValue.value.toString()))
 }
 </script>

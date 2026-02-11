@@ -7,96 +7,103 @@
       <div class="flex flex-1 flex-col">
         <div class="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
           <div>
-            <h1 class="text-3xl font-bold tracking-tight">Role & Permission</h1>
+            <h1 class="text-3xl font-bold tracking-tight">Role Management</h1>
             <p class="text-muted-foreground mt-1">Kelola role dan permission sistem</p>
           </div>
 
-          <div v-if="roleStore.loading" class="flex items-center justify-center py-8">
-            <p class="text-muted-foreground">Loading...</p>
-          </div>
-
-          <div v-else class="space-y-6">
-            <!-- Roles List -->
-            <div class="grid gap-4">
-              <Card v-for="role in roleStore.roles" :key="role.id">
-                <CardHeader>
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{{ role.nama }}</CardTitle>
-                      <CardDescription>
-                        {{ role.permissions.length }} permissions assigned
-                      </CardDescription>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      @click="editRole(role)"
-                    >
-                      <Settings class="h-4 w-4 mr-2" />
-                      Edit Permissions
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div class="flex flex-wrap gap-2">
-                    <Badge 
-                      v-for="permission in role.permissions.slice(0, 5)" 
-                      :key="permission.id"
-                      variant="secondary"
-                      class="text-xs"
-                    >
-                      {{ permission.description }}
-                    </Badge>
-                    <Badge 
-                      v-if="role.permissions.length > 5"
-                      variant="outline"
-                      class="text-xs"
-                    >
-                      +{{ role.permissions.length - 5 }} more
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Daftar Role</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div v-if="loading" class="text-center py-8">Loading...</div>
+              
+              <Table v-else>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama Role</TableHead>
+                    <TableHead>Jumlah Permission</TableHead>
+                    <TableHead class="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="role in roles" :key="role.id">
+                    <TableCell class="font-medium">{{ role.name }}</TableCell>
+                    <TableCell>{{ role.permissions?.length || 0 }} permissions</TableCell>
+                    <TableCell class="text-right">
+                      <Button size="sm" variant="outline" @click="openPermissionDialog(role)">
+                        Kelola Permission
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </SidebarInset>
 
-    <!-- Edit Role Permissions Dialog -->
-    <Dialog v-model:open="showEditDialog">
-      <DialogContent class="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogTitle>Edit Permissions - {{ selectedRole?.nama }}</DialogTitle>
-        <div v-if="selectedRole" class="space-y-6">
-          <!-- Permissions by Module -->
-          <div v-for="module in groupedPermissions" :key="module.name" class="space-y-3">
-            <h3 class="text-lg font-semibold">{{ module.name }}</h3>
-            <div class="grid gap-3">
-              <div 
-                v-for="permission in module.permissions" 
-                :key="permission.id"
-                class="flex items-center justify-between p-3 border rounded-lg"
+    <!-- Permission Dialog -->
+    <Dialog v-model:open="showPermissionDialog">
+      <DialogContent class="max-w-2xl p-0 flex flex-col max-h-[80vh]">
+        <div class="p-6 pb-4">
+          <DialogTitle>Kelola Permission - {{ selectedRole?.name }}</DialogTitle>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6 pb-6">
+          <div class="space-y-2">
+            <div v-for="(permissions, category) in groupedPermissions" :key="category" class="border rounded-lg">
+              <button
+                @click="toggleCategory(category)"
+                class="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
               >
-                <div class="flex-1">
-                  <div class="font-medium">{{ permission.description }}</div>
-                  <div class="text-sm text-muted-foreground">{{ permission.nama }}</div>
+                <div class="flex items-center gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="transition-transform"
+                    :class="expandedCategories.has(category) ? 'rotate-90' : ''"
+                  >
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                  <h3 class="text-sm font-semibold uppercase tracking-wider">
+                    {{ categoryLabels[category] || category }}
+                  </h3>
                 </div>
-                <Switch
-                  :checked="isPermissionAssigned(permission.id)"
-                  @update:checked="togglePermission(permission.id, $event)"
-                />
+                <span class="text-xs text-muted-foreground">
+                  {{ permissions.filter(p => isPermissionActive(p.id)).length }} / {{ permissions.length }}
+                </span>
+              </button>
+              <div v-if="expandedCategories.has(category)" class="p-4 pt-0 space-y-2">
+                <div v-for="permission in permissions" :key="permission.id" class="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div class="flex-1">
+                    <p class="font-medium text-sm">{{ permission.name }}</p>
+                    <p v-if="permission.description" class="text-xs text-muted-foreground">{{ permission.description }}</p>
+                  </div>
+                  <Switch
+                    :model-value="isPermissionActive(permission.id)"
+                    @update:model-value="checked => togglePermission(permission.id, checked)"
+                    class="ml-4"
+                  />
+                </div>
               </div>
             </div>
           </div>
-
-          <div class="flex gap-2 pt-4 border-t">
-            <Button @click="savePermissions" :disabled="roleStore.loading">
-              {{ roleStore.loading ? 'Saving...' : 'Save Changes' }}
-            </Button>
-            <Button variant="outline" @click="showEditDialog = false">
-              Cancel
-            </Button>
-          </div>
+        </div>
+        <div class="flex gap-2 p-6 pt-4 border-t bg-background">
+          <Button @click="savePermissions" :disabled="saving">
+            {{ saving ? 'Menyimpan...' : 'Simpan' }}
+          </Button>
+          <Button variant="outline" @click="showPermissionDialog = false">
+            Batal
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -106,69 +113,116 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
-import { Settings } from 'lucide-vue-next'
-import { useRoleStore } from '@/stores/role.store'
-import type { Role } from '@/types/role.types'
+import { api } from '@/services/api.service'
+import { useToast } from '@/components/ui/toast'
 
-const roleStore = useRoleStore()
-const showEditDialog = ref(false)
-const selectedRole = ref<Role | null>(null)
+const { toast } = useToast()
+const loading = ref(false)
+const saving = ref(false)
+const roles = ref<any[]>([])
+const allPermissions = ref<any[]>([])
+const selectedRole = ref<any | null>(null)
 const selectedPermissions = ref<number[]>([])
-
-onMounted(() => {
-  roleStore.fetchRoles()
-  roleStore.fetchPermissions()
-})
+const showPermissionDialog = ref(false)
+const expandedCategories = ref<Set<string>>(new Set())
 
 const groupedPermissions = computed(() => {
-  const groups = new Map()
-  
-  roleStore.permissions.forEach(permission => {
-    if (!groups.has(permission.module)) {
-      groups.set(permission.module, {
-        name: permission.module,
-        permissions: []
-      })
+  const groups: Record<string, any[]> = {}
+  allPermissions.value.forEach(permission => {
+    const category = permission.name.split('.')[0]
+    if (!groups[category]) {
+      groups[category] = []
     }
-    groups.get(permission.module).permissions.push(permission)
+    groups[category].push(permission)
   })
-  
-  return Array.from(groups.values())
+  return groups
 })
 
-const editRole = (role: Role) => {
-  selectedRole.value = role
-  selectedPermissions.value = role.permissions.map(p => p.id)
-  showEditDialog.value = true
+const categoryLabels: Record<string, string> = {
+  users: 'User Management',
+  roles: 'Role & Permission',
+  transactions: 'Transaksi',
+  reports: 'Laporan',
+  topups: 'Top Up',
 }
 
-const isPermissionAssigned = (permissionId: number) => {
-  return selectedPermissions.value.includes(permissionId)
-}
+onMounted(() => {
+  fetchRoles()
+  fetchAllPermissions()
+})
 
-const togglePermission = (permissionId: number, checked: boolean) => {
-  if (checked) {
-    selectedPermissions.value.push(permissionId)
-  } else {
-    selectedPermissions.value = selectedPermissions.value.filter(id => id !== permissionId)
+const fetchRoles = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/v1/roles')
+    roles.value = response.data.data
+  } catch (error) {
+    console.error('Failed to fetch roles:', error)
+  } finally {
+    loading.value = false
   }
+}
+
+const fetchAllPermissions = async () => {
+  try {
+    const response = await api.get('/v1/permissions')
+    allPermissions.value = response.data.data
+  } catch (error) {
+    console.error('Failed to fetch permissions:', error)
+  }
+}
+
+const openPermissionDialog = (role: any) => {
+  selectedRole.value = role
+  selectedPermissions.value = (role.permissions || []).map((p: any) => p.id)
+  expandedCategories.value = new Set()
+  showPermissionDialog.value = true
+}
+
+const toggleCategory = (category: string) => {
+  if (expandedCategories.value.has(category)) {
+    expandedCategories.value.delete(category)
+  } else {
+    expandedCategories.value.add(category)
+  }
+}
+
+const isPermissionActive = (id: number) => {
+  return selectedPermissions.value.includes(id)
+}
+
+const togglePermission = (id: number, checked: boolean) => {
+  console.log('Toggle permission:', id, 'checked:', checked)
+  if (checked) {
+    selectedPermissions.value = [...selectedPermissions.value, id]
+  } else {
+    selectedPermissions.value = selectedPermissions.value.filter(p => p !== id)
+  }
+  console.log('Updated selectedPermissions:', selectedPermissions.value)
 }
 
 const savePermissions = async () => {
   if (!selectedRole.value) return
   
+  saving.value = true
   try {
-    await roleStore.updateRolePermissions(selectedRole.value.id, selectedPermissions.value)
-    showEditDialog.value = false
+    await api.post(`/v1/roles/${selectedRole.value.id}/permissions`, {
+      permissions: selectedPermissions.value
+    })
+    toast({ title: 'Berhasil', description: 'Permission berhasil diperbarui' })
+    showPermissionDialog.value = false
+    fetchRoles()
   } catch (error) {
-    console.error('Failed to save permissions:', error)
+    toast({ title: 'Gagal', description: 'Gagal memperbarui permission', variant: 'destructive' })
+  } finally {
+    saving.value = false
   }
 }
 </script>
