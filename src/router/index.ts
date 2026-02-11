@@ -16,7 +16,37 @@ const routes: RouteRecordRaw[] = [
   // ===== ADMIN =====
   {
     path: '/admin/dashboard',
-    component: () => import('@/views/admin/DashboardAdmin.vue'),
+    component: () => import('@/views/Admin/AdminDashboard.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/mitra',
+    component: () => import('@/views/Admin/MitraManagement.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/mitra/add',
+    component: () => import('@/views/Admin/AddMitra.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/users',
+    component: () => import('@/views/Admin/UserManagement.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/role-management',
+    component: () => import('@/views/Admin/RoleManagement.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/reports',
+    component: () => import('@/views/Admin/ReportView.vue'),
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/profile',
+    component: () => import('@/views/Admin/AdminProfile.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
 

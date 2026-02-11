@@ -62,7 +62,7 @@
             <!-- Grafik & Aktivitas -->
             <div class="grid gap-4 md:grid-cols-2">
               <!-- Grafik Transaksi -->
-              <ChartTransaksi :data="adminStore.dashboardData.grafik_transaksi" />
+              <!-- <ChartTransaksi :data="adminStore.dashboardData.grafik_transaksi" /> -->
 
               <!-- Aktivitas Terbaru -->
               <Card>
@@ -98,7 +98,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
-import ChartTransaksi from '@/components/ChartTransaksi.vue'
+//import ChartTransaksi from '@/components/ChartTransaksi.vue'
 import { TrendingUp, Calendar, Wallet, DollarSign, Activity, CreditCard, UserPlus, Banknote } from 'lucide-vue-next'
 import { useAdminStore } from '@/stores/admin.store'
 
