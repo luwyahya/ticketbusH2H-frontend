@@ -71,20 +71,40 @@ const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
+
+
 const handleLogin = async () => {
   loading.value = true
   error.value = ''
+
   try {
-    await authStore.login({ email: email.value, password: password.value })
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+    })
+
     toast({
       title: 'Login berhasil!',
       description: 'Selamat datang kembali',
     })
-    router.push('/admin/dashboard')
+
+    // 🔥 ROLE-BASED REDIRECT
+    if (authStore.user?.role === 'admin') {
+      router.push('/admin/dashboard')
+    } else if (authStore.user?.role === 'mitra') {
+      router.push('/mitra/dashboard')
+    } else {
+      throw new Error('Role tidak dikenal')
+    }
+
   } catch (err: any) {
-    error.value = err.message || 'Login gagal. Periksa email dan password Anda.'
+    error.value =
+      err?.response?.data?.message ||
+      err.message ||
+      'Login gagal. Periksa email dan password Anda.'
   } finally {
     loading.value = false
   }
 }
+
 </script>

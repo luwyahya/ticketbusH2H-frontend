@@ -58,7 +58,7 @@ const currentPageName = computed(() => {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">
+            <BreadcrumbLink href="/mitra/dashboard">
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>

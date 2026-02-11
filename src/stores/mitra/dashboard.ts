@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
+import { api } from '@/services/api.service'
 
 export const useDashboardMitraStore = defineStore('dashboardMitra', {
   state: () => ({
     dashboard: {
-      balance: 1200000,
-      totalTransactions: 128,
-      totalFee: 1250000,
+      balance: 0,
+      totalTransactions: 0,
+      totalFee: 0,
+      chart: [],
     },
     loading: false,
   }),
@@ -13,17 +15,23 @@ export const useDashboardMitraStore = defineStore('dashboardMitra', {
   actions: {
     async fetchDashboard() {
       this.loading = true
+      try {
+        const response = await api.get('/dashboard/mitra')
 
-      // simulasi API (mock)
-      await new Promise(resolve => setTimeout(resolve, 800))
+        const data = response.data.data
 
-      this.dashboard = {
-        balance: 1200000,
-        totalTransactions: 128,
-        totalFee: 1250000,
+        // 🔁 mapping backend → frontend
+        this.dashboard = {
+          balance: data.balance,
+          totalTransactions: data.total_transactions,
+          totalFee: data.total_fee_earned,
+          chart: data.chart_transactions,
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard mitra:', error)
+      } finally {
+        this.loading = false
       }
-
-      this.loading = false
     },
   },
 })

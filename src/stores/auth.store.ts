@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { AuthState, User, LoginCredentials } from '@/types/auth.types'
 
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     isLoggedIn: !!localStorage.getItem('token'),
@@ -14,27 +15,35 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(credentials: LoginCredentials) {
-      try {
-        const { api } = await import('@/services/api.service')
-        const response = await api.post('/v1/auth/login', credentials)
-        
-        const { user, access_token } = response.data.data
+        try {
+          const { api } = await import('@/services/api.service')
+          const response = await api.post('/v1/auth/login', credentials)
 
-        // Save to state
-        this.token = access_token
-        this.user = user
-        this.isLoggedIn = true
+          const { user, access_token } = response.data.data
 
-        // Save to localStorage
-        localStorage.setItem('token', access_token)
-        localStorage.setItem('user', JSON.stringify(user))
+          this.token = access_token
+          this.user = user
+          this.isLoggedIn = true
 
-        return { success: true }
-      } catch (error: any) {
-        console.error('Login failed:', error)
-        throw error
+          localStorage.setItem('token', access_token)
+          localStorage.setItem('user', JSON.stringify(user))
+
+          // 🔥 REDIRECT ROLE DI SINI
+          if (user.role === 'admin') {
+            return { success: true, redirect: '/admin/dashboard' }
+          }
+
+          if (user.role === 'mitra') {
+            return { success: true, redirect: '/mitra/dashboard' }
+          }
+
+          throw new Error('Unknown role')
+        } catch (error) {
+          console.error('Login failed:', error)
+          throw error
+        }
       }
-    },
+      ,
 
     async logout() {
       try {
