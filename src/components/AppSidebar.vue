@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
 import {
   Sidebar,
   SidebarContent,
@@ -12,23 +13,54 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { Home, Package } from 'lucide-vue-next'
+import { Home, Users, Bus, User, Shield, FileText, Wallet } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 
 const navigationItems = [
   {
     title: 'Dashboard',
     icon: Home,
-    path: '/dashboard',
+    path: '/admin/dashboard',
   },
   {
-    title: 'Products',
-    icon: Package,
-    path: '/products',
+    title: 'Data Mitra',
+    icon: Users,
+    path: '/admin/mitra',
+  },
+  {
+    title: 'Approval Top Up',
+    icon: Wallet,
+    path: '/admin/topup-approval',
+  },
+  {
+    title: 'Data Pengguna',
+    icon: User,
+    path: '/admin/users',
+  },
+  {
+    title: 'Role Management',
+    icon: Shield,
+    path: '/admin/role-management',
+  },
+  {
+    title: 'Laporan',
+    icon: FileText,
+    path: '/admin/reports',
   },
 ]
+
+const getUserInitials = () => {
+  const name = authStore.user?.name || 'User'
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
+}
 </script>
 
 <template>
@@ -39,11 +71,11 @@ const navigationItems = [
           <SidebarMenuButton size="lg" as-child>
             <div class="flex items-center gap-2">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Package class="size-4" />
+                <Bus class="size-4" />
               </div>
               <div class="flex flex-col gap-0.5 leading-none">
-                <span class="font-semibold">FE Netzme</span>
-                <span class="text-xs">Product Management</span>
+                <span class="font-semibold">H2H Ticketing</span>
+                <span class="text-xs">Admin Dashboard</span>
               </div>
             </div>
           </SidebarMenuButton>
@@ -77,11 +109,11 @@ const navigationItems = [
           <SidebarMenuButton size="lg">
             <div class="flex items-center gap-2">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <span class="text-sm font-semibold">U</span>
+                <span class="text-sm font-semibold">{{ getUserInitials() }}</span>
               </div>
               <div class="flex flex-col gap-0.5 leading-none">
-                <span class="text-sm font-medium">User</span>
-                <span class="text-xs text-muted-foreground">user@example.com</span>
+                <span class="text-sm font-medium">{{ authStore.user?.name || 'User' }}</span>
+                <span class="text-xs text-muted-foreground">{{ authStore.user?.email || 'user@example.com' }}</span>
               </div>
             </div>
           </SidebarMenuButton>
