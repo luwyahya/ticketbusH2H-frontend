@@ -17,7 +17,12 @@
             <p class="text-muted-foreground mt-1">
               Ringkasan aktivitas dan saldo mitra Anda.
             </p>
+          </div>
 
+          <!-- Error Alert -->
+          <div v-if="dashboardStore.error" class="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <p class="text-sm text-destructive font-medium">{{ dashboardStore.error }}</p>
+            <p class="text-xs text-muted-foreground mt-1">Silakan hubungi admin untuk aktivasi akun mitra Anda.</p>
           </div>
 
           <!-- Stats Cards -->

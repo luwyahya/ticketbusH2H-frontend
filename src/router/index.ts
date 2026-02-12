@@ -16,52 +16,52 @@ const routes: RouteRecordRaw[] = [
   // ===== ADMIN =====
   {
     path: '/admin/dashboard',
-    component: () => import('@/views/Admin/AdminDashboard.vue'),
+    component: () => import('@/views/admin/AdminDashboard.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/mitra',
-    component: () => import('@/views/Admin/MitraManagement.vue'),
+    component: () => import('@/views/admin/MitraManagement.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/mitra/add',
-    component: () => import('@/views/Admin/AddMitra.vue'),
+    component: () => import('@/views/admin/AddMitra.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/mitra/:id',
-    component: () => import('@/views/Admin/MitraDetail.vue'),
+    component: () => import('@/views/admin/MitraDetail.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/topup-approval',
-    component: () => import('@/views/Admin/TopupApproval.vue'),
+    component: () => import('@/views/admin/TopupApproval.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/users',
-    component: () => import('@/views/Admin/UserManagement.vue'),
+    component: () => import('@/views/admin/UserManagement.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/role-management',
-    component: () => import('@/views/Admin/RoleManagement.vue'),
+    component: () => import('@/views/admin/RoleManagement.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/role-permissions',
-    component: () => import('@/views/Admin/RolePermissions.vue'),
+    component: () => import('@/views/admin/RolePermissions.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/reports',
-    component: () => import('@/views/Admin/ReportView.vue'),
+    component: () => import('@/views/admin/ReportView.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/profile',
-    component: () => import('@/views/Admin/AdminProfile.vue'),
+    component: () => import('@/views/admin/AdminProfile.vue'),
     meta: { requiresAuth: true, role: 'admin' },
   },
 

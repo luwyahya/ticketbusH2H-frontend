@@ -152,7 +152,7 @@ onMounted(() => {
 const fetchDashboardData = async () => {
   loading.value = true
   try {
-    const response = await api.get('/v1/dashboard/admin')
+    const response = await api.get('/dashboard/admin')
     dashboardData.value = response.data.data
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
@@ -163,7 +163,7 @@ const fetchDashboardData = async () => {
 
 const fetchBalance = async () => {
   try {
-    const response = await api.get('/v1/balance')
+    const response = await api.get('/balance')
     balance.value = response.data.data?.total_balance || 0
   } catch (error) {
     console.error('Failed to fetch balance:', error)

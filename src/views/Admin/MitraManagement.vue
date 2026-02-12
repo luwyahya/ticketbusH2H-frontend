@@ -203,8 +203,9 @@ onMounted(() => {
 const fetchMitras = async () => {
   loading.value = true
   try {
-    const response = await api.get('/v1/mitra')
-    allMitras.value = response.data.data || []
+    const response = await api.get('/mitra')
+    const data = response.data.data
+    allMitras.value = Array.isArray(data) ? data : []
   } catch (error: any) {
     console.error('Failed to fetch mitras:', error)
     toast({ 
@@ -219,6 +220,7 @@ const fetchMitras = async () => {
 }
 
 const pendingMitras = computed(() => {
+  if (!Array.isArray(allMitras.value)) return []
   return allMitras.value
     .filter(m => m.status === 'pending')
     .map(m => ({
@@ -233,6 +235,7 @@ const pendingMitras = computed(() => {
 })
 
 const activeMitras = computed(() => {
+  if (!Array.isArray(allMitras.value)) return []
   let filtered = allMitras.value.filter(m => m.status !== 'pending')
   
   if (searchQuery.value) {
@@ -279,7 +282,7 @@ const viewDetail = async (id: number) => {
 
 const approveMitra = async (id: number) => {
   try {
-    await api.post(`/v1/mitra/${id}/approve`)
+    await api.post(`/mitra/${id}/approve`)
     toast({ title: 'Berhasil', description: 'Mitra berhasil diapprove' })
     fetchMitras()
   } catch (error) {
@@ -289,7 +292,7 @@ const approveMitra = async (id: number) => {
 
 const rejectMitra = async (id: number) => {
   try {
-    await api.post(`/v1/mitra/${id}/reject`)
+    await api.post(`/mitra/${id}/reject`)
     toast({ title: 'Berhasil', description: 'Mitra berhasil direject' })
     fetchMitras()
   } catch (error) {
