@@ -76,6 +76,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/mitra/TopupMitra.vue'),
     meta: { requiresAuth: true, role: 'mitra' },
   },
+    {
+    path: '/mitra/transaksi',
+    name: 'TransaksiMitra',
+    component: () => import('@/views/mitra/TransaksiMitra.vue'),
+    meta: { requiresAuth: true, role: 'mitra' },
+  },
+
 
   // ===== OTHER =====
   {

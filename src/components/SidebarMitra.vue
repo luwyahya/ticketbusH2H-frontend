@@ -39,11 +39,6 @@ const navigationItems = [
     icon: Ticket,
     path: '/mitra/transaksi',
   },
-  {
-    title: 'Laporan',
-    icon: BarChart3,
-    path: '/mitra/laporan',
-  },
 ]
 </script>
 

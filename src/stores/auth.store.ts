@@ -48,7 +48,7 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       try {
         const { api } = await import('@/services/api.service')
-        await api.post('/v1/auth/logout')
+        await api.post('/auth/logout')
       } catch (error) {
         console.error('Logout API failed:', error)
       } finally {

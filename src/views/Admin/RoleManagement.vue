@@ -49,6 +49,7 @@
       <DialogContent class="max-w-2xl p-0 flex flex-col max-h-[80vh]">
         <div class="p-6 pb-4">
           <DialogTitle>Kelola Permission - {{ selectedRole?.name }}</DialogTitle>
+          <DialogDescription>Pilih permission untuk role ini</DialogDescription>
         </div>
         <div class="flex-1 overflow-y-auto px-6 pb-6">
           <div class="space-y-2">
@@ -116,7 +117,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import AppSidebar from '@/components/AppSidebar.vue'
 import SiteHeader from '@/components/SiteHeader.vue'
@@ -129,13 +130,14 @@ const saving = ref(false)
 const roles = ref<any[]>([])
 const allPermissions = ref<any[]>([])
 const selectedRole = ref<any | null>(null)
-const selectedPermissions = ref<number[]>([])
+const selectedPermissions = ref<string[]>([])
 const showPermissionDialog = ref(false)
 const expandedCategories = ref<Set<string>>(new Set())
 
 const groupedPermissions = computed(() => {
   const groups: Record<string, any[]> = {}
   allPermissions.value.forEach(permission => {
+    if (!permission?.name) return
     const category = permission.name.split('.')[0]
     if (!groups[category]) {
       groups[category] = []
@@ -161,7 +163,7 @@ onMounted(() => {
 const fetchRoles = async () => {
   loading.value = true
   try {
-    const response = await api.get('/v1/roles')
+    const response = await api.get('/roles')
     roles.value = response.data.data
   } catch (error) {
     console.error('Failed to fetch roles:', error)
@@ -172,16 +174,30 @@ const fetchRoles = async () => {
 
 const fetchAllPermissions = async () => {
   try {
-    const response = await api.get('/v1/permissions')
-    allPermissions.value = response.data.data
+    const response = await api.get('/permissions')
+    console.log('Permissions response:', response.data)
+    const data = response.data.data || response.data.message?.data || response.data
+    // Backend returns array of strings, convert to objects with id and name
+    allPermissions.value = Array.isArray(data) ? data.map((name: string, index: number) => ({
+      id: name,
+      name: name,
+      description: ''
+    })) : []
+    console.log('Parsed permissions:', allPermissions.value)
   } catch (error) {
     console.error('Failed to fetch permissions:', error)
+    allPermissions.value = []
   }
 }
 
 const openPermissionDialog = (role: any) => {
+  console.log('Opening dialog for role:', role)
   selectedRole.value = role
-  selectedPermissions.value = (role.permissions || []).map((p: any) => p.id)
+  const rolePermissions = role.permissions || []
+  console.log('Role permissions:', rolePermissions)
+  // Backend returns array of permission names (strings)
+  selectedPermissions.value = Array.isArray(rolePermissions) ? rolePermissions : []
+  console.log('Selected permission IDs:', selectedPermissions.value)
   expandedCategories.value = new Set()
   showPermissionDialog.value = true
 }
@@ -194,11 +210,11 @@ const toggleCategory = (category: string) => {
   }
 }
 
-const isPermissionActive = (id: number) => {
+const isPermissionActive = (id: string) => {
   return selectedPermissions.value.includes(id)
 }
 
-const togglePermission = (id: number, checked: boolean) => {
+const togglePermission = (id: string, checked: boolean) => {
   console.log('Toggle permission:', id, 'checked:', checked)
   if (checked) {
     selectedPermissions.value = [...selectedPermissions.value, id]
@@ -213,14 +229,17 @@ const savePermissions = async () => {
   
   saving.value = true
   try {
-    await api.post(`/v1/roles/${selectedRole.value.id}/permissions`, {
+    console.log('Sending permissions:', selectedPermissions.value)
+    await api.post(`/roles/${selectedRole.value.id}/permissions`, {
       permissions: selectedPermissions.value
     })
     toast({ title: 'Berhasil', description: 'Permission berhasil diperbarui' })
     showPermissionDialog.value = false
     fetchRoles()
-  } catch (error) {
-    toast({ title: 'Gagal', description: 'Gagal memperbarui permission', variant: 'destructive' })
+  } catch (error: any) {
+    console.error('Save permissions error:', error)
+    const errorMsg = error.message || 'Gagal memperbarui permission'
+    toast({ title: 'Gagal', description: errorMsg, variant: 'destructive' })
   } finally {
     saving.value = false
   }

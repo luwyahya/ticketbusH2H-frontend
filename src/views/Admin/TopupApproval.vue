@@ -18,7 +18,9 @@
             </CardHeader>
             <CardContent>
               <div v-if="loading" class="text-center py-8">Loading...</div>
-              
+              <div v-else-if="topups.length === 0" class="text-center py-8 text-muted-foreground">
+                Tidak ada data top up
+              </div>
               <Table v-else>
                 <TableHeader>
                   <TableRow>
@@ -180,10 +182,18 @@ onMounted(() => {
 const fetchTopups = async () => {
   loading.value = true
   try {
-    const response = await api.get('/v1/topups')
-    topups.value = response.data.data.data || []
+    const response = await api.get('/topups')
+    console.log('Topups response:', response.data)
+    
+    // Backend returns paginated data in message.data
+    const data = response.data.message?.data || response.data.data?.data || response.data.data || []
+    topups.value = Array.isArray(data) ? data : []
+    
+    console.log('Parsed topups:', topups.value)
+    console.log('Topups count:', topups.value.length)
   } catch (error) {
     console.error('Failed to fetch topups:', error)
+    topups.value = []
   } finally {
     loading.value = false
   }
@@ -191,7 +201,7 @@ const fetchTopups = async () => {
 
 const approveTopup = async (id: number) => {
   try {
-    await api.post(`/v1/topups/${id}/approve`)
+    await api.post(`/topups/${id}/approve`)
     toast({ title: 'Berhasil', description: 'Top up berhasil disetujui' })
     showDetailDialog.value = false
     fetchTopups()
@@ -202,7 +212,7 @@ const approveTopup = async (id: number) => {
 
 const rejectTopup = async (id: number) => {
   try {
-    await api.post(`/v1/topups/${id}/reject`)
+    await api.post(`/topups/${id}/reject`)
     toast({ title: 'Berhasil', description: 'Top up berhasil ditolak' })
     showDetailDialog.value = false
     fetchTopups()
