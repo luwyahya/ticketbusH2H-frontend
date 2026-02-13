@@ -45,6 +45,8 @@ const search = async () => {
     destination: destination.value,
     travel_date: travel_date.value
   })
+  
+  console.log('Search result:', store.schedules)
 }
 
 const selectSchedule = async (schedule: any) => {
@@ -89,6 +91,16 @@ const proceedToPassengerForm = () => {
 
 // Step 3: Book
 const bookTicket = async () => {
+  if (!selectedSchedule.value) {
+    toast({
+      title: 'Error',
+      description: 'Jadwal tidak ditemukan, silakan pilih ulang',
+      variant: 'destructive'
+    })
+    showPassengerForm.value = false
+    return
+  }
+
   const isValid = passengers.value.every(p => p.name && p.identity_number)
   if (!isValid) {
     toast({
@@ -100,6 +112,14 @@ const bookTicket = async () => {
   }
 
   try {
+    console.log('Selected schedule:', selectedSchedule.value)
+    console.log('Booking with data:', {
+      provider_code: selectedSchedule.value.provider_code,
+      travel_date: travel_date.value,
+      seats: selectedSeats.value,
+      passengers: passengers.value
+    })
+
     const result = await store.book({
       provider_code: selectedSchedule.value.provider_code,
       travel_date: travel_date.value,
@@ -107,15 +127,26 @@ const bookTicket = async () => {
       passengers: passengers.value
     })
 
+    console.log('Booking result:', result)
     currentTransaction.value = result
+    
+    // Close passenger form first
     showPassengerForm.value = false
-    showPaymentDialog.value = true
-
+    
+    // Show success toast
     toast({
       title: 'Booking Berhasil',
       description: `Kode: ${result.trx_code}`
     })
+
+    // Wait a bit then open payment dialog
+    setTimeout(() => {
+      console.log('Opening payment dialog, currentTransaction:', currentTransaction.value)
+      showPaymentDialog.value = true
+      console.log('showPaymentDialog:', showPaymentDialog.value)
+    }, 300)
   } catch (error: any) {
+    console.error('Booking error:', error)
     toast({
       title: 'Booking Gagal',
       description: error.message || 'Terjadi kesalahan',
@@ -127,16 +158,28 @@ const bookTicket = async () => {
 // Step 4: Pay
 const payTransaction = async () => {
   try {
+    console.log('Paying transaction:', currentTransaction.value.trx_code)
     const result = await store.pay(currentTransaction.value.trx_code)
+    console.log('Payment result:', result)
+    
     currentTransaction.value = result
-    showPaymentDialog.value = false
-    showIssueDialog.value = true
-
+    
     toast({
       title: 'Pembayaran Berhasil',
       description: 'Silakan cetak tiket'
     })
+
+    // Close payment dialog first
+    showPaymentDialog.value = false
+    
+    // Wait then open issue dialog
+    setTimeout(() => {
+      console.log('Opening issue dialog, currentTransaction:', currentTransaction.value)
+      showIssueDialog.value = true
+      console.log('showIssueDialog:', showIssueDialog.value)
+    }, 300)
   } catch (error: any) {
+    console.error('Payment error:', error)
     toast({
       title: 'Pembayaran Gagal',
       description: error.message || 'Saldo tidak cukup',
@@ -259,7 +302,7 @@ const cancelTransaction = async () => {
           </Card>
 
           <!-- RESULT CARD -->
-          <Card v-if="store.schedules.length">
+          <Card v-if="store.schedules.length" class="animate-in fade-in duration-300">
             <CardHeader>
               <CardTitle>Hasil Pencarian</CardTitle>
               <CardDescription>
@@ -272,21 +315,23 @@ const cancelTransaction = async () => {
               <div
                 v-for="schedule in store.schedules"
                 :key="schedule.provider_code"
-                class="border rounded-lg p-4 flex justify-between items-center"
+                class="border rounded-lg p-4 flex justify-between items-center transition-all duration-200 hover:shadow-md hover:border-primary/50 cursor-pointer"
+                :class="selectedSchedule?.provider_code === schedule.provider_code ? 'border-primary bg-primary/5' : ''"
               >
                 <div>
                   <div class="font-medium">{{ schedule.route }}</div>
                   <div class="text-sm text-muted-foreground">
                     Berangkat: {{ schedule.departure_time }}
                   </div>
-                  <div class="font-semibold mt-1">
-                    Rp {{ Number(schedule.price).toLocaleString('id-ID') }}
+                  <div class="font-semibold mt-1 text-primary">
+                    Rp {{ (schedule.price || 0).toLocaleString('id-ID') }}
                   </div>
                 </div>
 
                 <Button
                   variant="secondary"
                   @click="selectSchedule(schedule)"
+                  class="transition-all hover:scale-105"
                 >
                   Pilih
                 </Button>
@@ -296,7 +341,7 @@ const cancelTransaction = async () => {
           </Card>
 
           <!-- SEAT MAP CARD -->
-          <Card v-if="store.seatMap.length">
+          <Card v-if="store.seatMap.length" class="animate-in fade-in duration-300">
             <CardHeader>
                 <CardTitle>Seat Map</CardTitle>
                 <CardDescription>
@@ -311,13 +356,13 @@ const cancelTransaction = async () => {
                     v-for="seat in store.seatMap"
                     :key="seat.number"
                     @click="toggleSeat(seat)"
-                    class="px-4 py-2 rounded-md border text-sm font-medium transition"
+                    class="px-4 py-2 rounded-md border text-sm font-medium transition-all duration-200"
                     :class="[
                     seat.status === 'booked'
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-50'
                         : isSelected(seat.number)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200'
+                        ? 'bg-blue-600 text-white scale-110 shadow-lg'
+                        : 'bg-green-100 text-green-700 cursor-pointer hover:bg-green-200 hover:scale-105 hover:shadow-md'
                     ]"
                 >
                     {{ seat.number }}
@@ -326,15 +371,15 @@ const cancelTransaction = async () => {
                 </div>
 
                 <!-- SELECTED INFO -->
-                <div v-if="selectedSeats.length" class="mt-4">
-                  <div class="text-sm mb-2">
+                <div v-if="selectedSeats.length" class="mt-4 animate-in slide-in-from-bottom duration-300">
+                  <div class="text-sm mb-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     Kursi dipilih:
-                    <span class="font-semibold">
+                    <span class="font-semibold text-blue-700">
                       {{ selectedSeats.join(', ') }}
                     </span>
                   </div>
-                  <Button @click="proceedToPassengerForm">
-                    Lanjut ke Data Penumpang
+                  <Button @click="proceedToPassengerForm" class="w-full transition-all hover:scale-105">
+                    Lanjut ke Data Penumpang →
                   </Button>
                 </div>
             </CardContent>
@@ -375,30 +420,30 @@ const cancelTransaction = async () => {
 
           <!-- PAYMENT DIALOG -->
           <Dialog v-model:open="showPaymentDialog">
-            <DialogContent>
+            <DialogContent class="animate-in fade-in zoom-in duration-300">
               <DialogTitle>Konfirmasi Pembayaran</DialogTitle>
               <DialogDescription>Periksa detail transaksi Anda</DialogDescription>
               
               <div v-if="currentTransaction" class="space-y-3 py-4">
-                <div class="flex justify-between">
+                <div class="flex justify-between p-3 bg-muted/50 rounded-lg">
                   <span class="text-muted-foreground">Kode Transaksi</span>
                   <span class="font-medium">{{ currentTransaction.trx_code }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Total Bayar</span>
-                  <span class="font-bold text-lg">Rp {{ currentTransaction.amount?.toLocaleString('id-ID') }}</span>
+                <div class="flex justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                  <span class="text-muted-foreground font-medium">Total Bayar</span>
+                  <span class="font-bold text-2xl text-primary">Rp {{ currentTransaction.amount?.toLocaleString('id-ID') }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between p-3 bg-muted/50 rounded-lg">
                   <span class="text-muted-foreground">Status</span>
-                  <span class="font-medium">{{ currentTransaction.status }}</span>
+                  <span class="font-medium px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">{{ currentTransaction.status }}</span>
                 </div>
               </div>
 
               <div class="flex gap-2">
-                <Button @click="payTransaction" :disabled="store.loading">
+                <Button @click="payTransaction" :disabled="store.loading" class="flex-1 transition-all hover:scale-105">
                   {{ store.loading ? 'Memproses...' : 'Bayar Sekarang' }}
                 </Button>
-                <Button variant="destructive" @click="cancelTransaction">
+                <Button variant="destructive" @click="cancelTransaction" class="transition-all hover:scale-105">
                   Batalkan
                 </Button>
               </div>
@@ -407,30 +452,59 @@ const cancelTransaction = async () => {
 
           <!-- ISSUE DIALOG -->
           <Dialog v-model:open="showIssueDialog">
-            <DialogContent>
-              <DialogTitle>Cetak Tiket</DialogTitle>
-              <DialogDescription>Pembayaran berhasil, cetak tiket Anda</DialogDescription>
+            <DialogContent class="max-w-2xl animate-in fade-in zoom-in duration-300">
+              <DialogTitle>Informasi Tiket</DialogTitle>
+              <DialogDescription>Detail tiket bus Anda</DialogDescription>
               
-              <div v-if="currentTransaction" class="space-y-3 py-4">
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Kode Transaksi</span>
-                  <span class="font-medium">{{ currentTransaction.trx_code }}</span>
+              <div v-if="currentTransaction" class="space-y-4 py-4">
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                    <span class="text-sm text-muted-foreground block mb-1">Kode Transaksi</span>
+                    <p class="font-medium">{{ currentTransaction.trx_code }}</p>
+                  </div>
+                  <div class="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <span class="text-sm text-muted-foreground block mb-1">Status</span>
+                    <p class="font-medium text-green-600">{{ currentTransaction.status }}</p>
+                  </div>
+                  <div class="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                    <span class="text-sm text-muted-foreground block mb-1">Rute</span>
+                    <p class="font-medium">{{ selectedSchedule?.route }}</p>
+                  </div>
+                  <div class="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                    <span class="text-sm text-muted-foreground block mb-1">Tanggal Keberangkatan</span>
+                    <p class="font-medium">{{ travel_date }}</p>
+                  </div>
+                  <div class="p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                    <span class="text-sm text-muted-foreground block mb-1">Jam Keberangkatan</span>
+                    <p class="font-medium">{{ selectedSchedule?.departure_time }}</p>
+                  </div>
+                  <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span class="text-sm text-muted-foreground block mb-1">Kursi</span>
+                    <p class="font-medium text-blue-700">{{ selectedSeats.join(', ') }}</p>
+                  </div>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Status</span>
-                  <span class="font-medium text-green-600">{{ currentTransaction.status }}</span>
+
+                <div class="border-t pt-4">
+                  <h3 class="font-medium mb-3 flex items-center gap-2">Penumpang</h3>
+                  <div class="space-y-2">
+                    <div v-for="(passenger, index) in passengers" :key="index" class="text-sm p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                      <span class="font-medium">{{ index + 1 }}. {{ passenger.name }}</span>
+                      <span class="text-muted-foreground ml-2">({{ passenger.identity_number }})</span>
+                    </div>
+                  </div>
                 </div>
-                <div class="p-3 bg-green-50 rounded-lg text-sm text-green-700">
-                  Pembayaran berhasil! Klik tombol di bawah untuk mencetak tiket dan mendapatkan fee.
+
+                <div class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200 animate-pulse">
+                  <p class="text-sm text-green-700 font-medium">Pembayaran berhasil! Klik tombol di bawah untuk mencetak tiket dan mendapatkan fee.</p>
                 </div>
               </div>
 
               <div class="flex gap-2">
-                <Button @click="issueTicket" :disabled="store.loading">
+                <Button @click="issueTicket" :disabled="store.loading" class="flex-1 transition-all hover:scale-105">
                   {{ store.loading ? 'Memproses...' : 'Cetak Tiket' }}
                 </Button>
-                <Button variant="outline" @click="showIssueDialog = false">
-                  Nanti
+                <Button variant="outline" @click="showIssueDialog = false" class="transition-all hover:scale-105">
+                  ← Kembali
                 </Button>
               </div>
             </DialogContent>
