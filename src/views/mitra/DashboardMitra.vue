@@ -73,22 +73,18 @@
             </Card>
           </div>
 
-                        <!-- Grafik Transaksi Mitra -->
-              <Card>
-                <CardHeader>
-                  <CardTitle>Grafik Transaksi Mitra</CardTitle>
-                  <CardDescription>
-                    Ringkasan transaksi mitra berdasarkan waktu
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    class="h-[300px] flex items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground"
-                  >
-                    Grafik transaksi mitra (placeholder)
-                  </div>
-                </CardContent>
-              </Card>
+          <!-- Grafik Transaksi Mitra -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Grafik Transaksi Mitra</CardTitle>
+              <CardDescription>
+                Ringkasan transaksi mitra berdasarkan waktu
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TransactionChart :chartData="dashboardStore.dashboard.chart" />
+            </CardContent>
+          </Card>
 
         </div>
       </div>
@@ -103,6 +99,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import SiteHeader from '@/components/SiteHeader.vue'
 import SidebarMitra from '@/components/SidebarMitra.vue'
+import TransactionChart from '@/components/TransactionChart.vue'
 
 import { useDashboardMitraStore } from '@/stores/mitra/dashboard'
 import { onMounted } from 'vue'

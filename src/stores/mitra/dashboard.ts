@@ -20,6 +20,9 @@ export const useDashboardMitraStore = defineStore('dashboardMitra', {
       try {
         const response = await api.get('/dashboard/mitra')
         const data = response.data.data
+        
+        console.log('Dashboard API Response:', response.data)
+        console.log('Chart data:', data.chart_transactions)
 
         this.dashboard = {
           balance: data.balance || 0,

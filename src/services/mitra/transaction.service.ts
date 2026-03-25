@@ -12,9 +12,12 @@ interface Passenger {
 }
 
 interface BookPayload {
-  provider_code: string
+  schedule_id: number
   travel_date: string
-  seats: string[]
+  seats: number[]
+  customer_name: string
+  customer_phone: string
+  customer_email?: string
   passengers: Passenger[]
 }
 
@@ -26,8 +29,8 @@ export default {
   },
 
   // 🪑 Seat Map
-  seatMap(provider_code: string) {
-    return api.post('/transactions/seat-map', { provider_code })
+  seatMap(schedule_id: number, travel_date: string) {
+    return api.post('/transactions/seat-map', { schedule_id, travel_date })
   },
 
   // 📦 Book transaction (status: pending)
@@ -53,6 +56,25 @@ export default {
   // 📄 Detail transaction
   detail(trx_code: string) {
     return api.get(`/transactions/${trx_code}`)
+  },
+
+  // 📊 Statistics
+  statistics(period: 'today' | 'month' | 'year', month?: number, year?: number) {
+    return api.get('/transactions/statistics', {
+      params: { period, month, year }
+    })
+  },
+
+  // 📜 History
+  history(page: number = 1, per_page: number = 10) {
+    return api.get('/transactions/history', {
+      params: { page, per_page }
+    })
+  },
+
+  // 🖨️ Print ticket
+  printTicket(trx_code: string) {
+    return api.get(`/transactions/${trx_code}/print`)
   }
 
 }

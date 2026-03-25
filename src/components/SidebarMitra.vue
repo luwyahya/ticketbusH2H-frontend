@@ -97,22 +97,7 @@ const navigationItems = [
     <SidebarFooter>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg">
-            <div class="flex items-center gap-2">
-              <div
-                class="flex aspect-square size-8 items-center justify-center
-                       rounded-lg bg-muted text-muted-foreground"
-              >
-                <span class="text-sm font-semibold">M</span>
-              </div>
-              <div class="flex flex-col gap-0.5 leading-none">
-                <span class="text-sm font-medium">Nama Mitra</span>
-                <span class="text-xs text-muted-foreground">
-                  saldo: Rp 0
-                </span>
-              </div>
-            </div>
-          </SidebarMenuButton>
+          
         </SidebarMenuItem>
       </SidebarMenu>
     </SidebarFooter>

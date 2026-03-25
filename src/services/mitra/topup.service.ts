@@ -1,8 +1,8 @@
 import { api } from '@/services/api.service'
 
 export const MitraTopupService = {
-  fetchTopups() {
-    return api.get('/topups')
+  fetchTopups(page = 1, perPage = 10) {
+    return api.get('/topups', { params: { page, per_page: perPage } })
   },
 
   createTopup(form: FormData) {

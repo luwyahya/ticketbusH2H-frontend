@@ -128,6 +128,32 @@
                 </tbody>
               </table>
 
+              <!-- Pagination -->
+              <div v-if="topupStore.topups.length > 0" class="flex items-center justify-between mt-4 pt-4 border-t">
+                <div class="text-sm text-muted-foreground">
+                  Menampilkan {{ topupStore.topups.length }} dari {{ topupStore.pagination.total }} data
+                  (Halaman {{ topupStore.pagination.current_page }} dari {{ topupStore.pagination.last_page }})
+                </div>
+                <div v-if="topupStore.pagination.last_page > 1" class="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="topupStore.pagination.current_page === 1"
+                    @click="changePage(topupStore.pagination.current_page - 1)"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="topupStore.pagination.current_page === topupStore.pagination.last_page"
+                    @click="changePage(topupStore.pagination.current_page + 1)"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
 
@@ -139,6 +165,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
@@ -149,6 +176,8 @@ import { useAuthStore } from "@/stores/auth.store"
 import { useMitraTopupStore } from '@/stores/mitra/topup.store'
 import { useToast } from '@/components/ui/toast/use-toast'
 
+const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const topupStore = useMitraTopupStore()
 const dashboardStore = useDashboardMitraStore()
@@ -162,6 +191,11 @@ const onFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement | null
   if (!target || !target.files || target.files.length === 0) return
   proofFile.value = target.files[0]
+}
+
+const changePage = (page: number) => {
+  router.push({ query: { page } })
+  topupStore.fetchTopups(page)
 }
 
 const submitTopup = async () => {
@@ -202,7 +236,8 @@ const submitTopup = async () => {
     paymentMethod.value = 'transfer'
 
     // Refresh data
-    await topupStore.fetchTopups()
+    const currentPage = Number(route.query.page) || 1
+    await topupStore.fetchTopups(currentPage)
     await dashboardStore.fetchDashboard()
   } catch (error: any) {
     toast({
@@ -214,7 +249,8 @@ const submitTopup = async () => {
 }
 
 onMounted(() => {
+  const page = Number(route.query.page) || 1
   dashboardStore.fetchDashboard()
-  topupStore.fetchTopups()
+  topupStore.fetchTopups(page, 10)
 })
 </script>

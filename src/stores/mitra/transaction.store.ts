@@ -5,9 +5,23 @@ export const useTransactionStore = defineStore('transactionMitra', {
   state: () => ({
     schedules: [] as any[],
     seatMap: [] as any[],
+    seatMapData: null as any,
     transactionDetail: null as any,
     lastBooking: null as any,
     loading: false,
+    statistics: {
+      today: { count: 0, amount: 0 },
+      month: { count: 0, amount: 0 },
+      year: { count: 0, amount: 0 }
+    },
+    history: [] as any[],
+    historyPagination: {
+      current_page: 1,
+      last_page: 1,
+      per_page: 10,
+      total: 0
+    },
+    ticketData: null as any,
   }),
 
   actions: {
@@ -17,23 +31,23 @@ export const useTransactionStore = defineStore('transactionMitra', {
       try {
         this.loading = true
         const res = await transactionService.search(payload)
-        console.log('API Response:', res.data)
-        // Backend returns data in message field
-        this.schedules = res.data.message || res.data.data || []
-        console.log('Schedules:', this.schedules)
+        console.log('🔍 Search API Response:', res.data)
+        const message = res.data.message || res.data.data || {}
+        console.log('📦 Message object:', message)
+        this.schedules = message.schedules || []
+        console.log('📅 Schedules array:', this.schedules)
       } finally {
         this.loading = false
       }
     },
 
     // 🪑 SEAT MAP
-    async getSeatMap(provider_code: string) {
-      const res = await transactionService.seatMap(provider_code)
-      console.log('Seat map response:', res.data)
-      // Backend returns seats in message.data.seats
-      const data = res.data.message || res.data.data
-      this.seatMap = data?.seats || []
-      console.log('Seat map:', this.seatMap)
+    async getSeatMap(schedule_id: number, travel_date: string) {
+      const res = await transactionService.seatMap(schedule_id, travel_date)
+      const message = res.data.message || res.data.data || {}
+      this.seatMap = message.seats || []
+      this.seatMapData = message
+      return message
     },
 
     // 📦 BOOK
@@ -67,6 +81,50 @@ export const useTransactionStore = defineStore('transactionMitra', {
       const res = await transactionService.detail(trx_code)
       this.transactionDetail = res.data.message || res.data.data
       return this.transactionDetail
+    },
+
+    // 📊 STATISTICS
+    // Response: { success: true, message: { count, amount } }
+    async fetchStatistics(period: 'today' | 'month' | 'year', month?: number, year?: number) {
+      this.loading = true
+      try {
+        const res = await transactionService.statistics(period, month, year)
+        this.statistics[period] = res.data.message
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 📜 HISTORY
+    // Response: { success: true, data: { data: [...], current_page, last_page, per_page, total } }
+    async fetchHistory(page: number = 1, per_page: number = 10) {
+      this.loading = true
+      try {
+        const res = await transactionService.history(page, per_page)
+        const paginated = res.data.data
+        this.history = paginated.data
+        this.historyPagination = {
+          current_page: paginated.current_page,
+          last_page: paginated.last_page,
+          per_page: paginated.per_page,
+          total: paginated.total
+        }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 🖨️ PRINT TICKET
+    // Response: { success: true, message: { trx_code, origin, destination, ... } }
+    async fetchTicketData(trx_code: string) {
+      this.loading = true
+      try {
+        const res = await transactionService.printTicket(trx_code)
+        this.ticketData = res.data.message
+        return this.ticketData
+      } finally {
+        this.loading = false
+      }
     }
 
   }
