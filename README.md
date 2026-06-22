@@ -2,7 +2,7 @@
 
 Template frontend modern dengan Vue 3, TypeScript, dan shadcn-vue dashboard-01 untuk aplikasi web enterprise dengan integrasi API Laravel.
 
-## 📋 Daftar Isi
+##  Daftar Isi
 
 - [Tech Stack](#-tech-stack)
 - [Struktur Proyek](#-struktur-proyek)
@@ -13,7 +13,7 @@ Template frontend modern dengan Vue 3, TypeScript, dan shadcn-vue dashboard-01 u
 - [Panduan Pengembangan](#-panduan-pengembangan)
 - [Best Practices](#-best-practices)
 
-## 🚀 Tech Stack
+##  Tech Stack
 
 ### Core Framework
 - **Vue 3** (v3.4.21) - Progressive JavaScript Framework dengan Composition API
@@ -37,7 +37,7 @@ Template frontend modern dengan Vue 3, TypeScript, dan shadcn-vue dashboard-01 u
 - **@vueuse/core** (v10.11.1) - Collection of essential Vue Composition Utilities
 - **clsx** & **tailwind-merge** - Utility untuk menggabungkan class Tailwind
 
-## 📁 Struktur Proyek
+##  Struktur Proyek
 
 ```
 FE Netzme/
@@ -98,7 +98,7 @@ FE Netzme/
 └── package.json             # Dependencies & scripts
 ```
 
-## 🛠️ Setup & Instalasi
+##  Setup & Instalasi
 
 ### Prerequisites
 - **Node.js**: >= 18.x
@@ -144,7 +144,7 @@ FE Netzme/
    npm run preview
    ```
 
-## ⚙️ Konfigurasi
+##  Konfigurasi
 
 ### Environment Variables
 
@@ -180,10 +180,10 @@ File: `components.json`
 Axios instance dengan interceptors untuk handle authentication dan error handling.
 
 #### Features:
-- ✅ Auto-attach Bearer token ke setiap request
-- ✅ Auto-redirect ke login pada 401 Unauthorized
-- ✅ Centralized error handling
-- ✅ TypeScript support
+-  Auto-attach Bearer token ke setiap request
+-  Auto-redirect ke login pada 401 Unauthorized
+-  Centralized error handling
+-  TypeScript support
 
 #### Usage:
 
@@ -342,7 +342,7 @@ Template ini kompatibel dengan Laravel API Resource format:
 }
 ```
 
-## 🎨 Komponen UI
+##  Komponen UI
 
 ### Layout Components
 
@@ -506,7 +506,7 @@ npx shadcn-vue@latest add tabs
 
 Lihat komponen tersedia di: https://www.shadcn-vue.com/docs/components
 
-## 👨‍💻 Panduan Pengembangan
+##  Panduan Pengembangan
 
 ### Menambah Halaman Baru
 
@@ -615,7 +615,7 @@ Ikuti pattern yang sama dengan Product CRUD:
 
 ### 1. TypeScript
 
-✅ **DO**: Gunakan type untuk semua API response
+ **DO**: Gunakan type untuk semua API response
 ```typescript
 interface ApiResponse<T> {
   data: T
@@ -623,11 +623,11 @@ interface ApiResponse<T> {
 }
 ```
 
-❌ **DON'T**: Menggunakan `any`
+ **DON'T**: Menggunakan `any`
 
 ### 2. Composition API
 
-✅ **DO**: Gunakan Composition API dengan `<script setup>`
+ **DO**: Gunakan Composition API dengan `<script setup>`
 ```vue
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
@@ -639,21 +639,21 @@ const doubled = computed(() => count.value * 2)
 
 ### 3. State Management
 
-✅ **DO**: Gunakan Pinia store untuk shared state  
-✅ **DO**: Gunakan local `ref/reactive` untuk component-specific state
+ **DO**: Gunakan Pinia store untuk shared state  
+ **DO**: Gunakan local `ref/reactive` untuk component-specific state
 
 ### 4. API Calls
 
-✅ **DO**: Semua API calls melalui service layer  
-✅ **DO**: Handle loading & error states
+ **DO**: Semua API calls melalui service layer  
+ **DO**: Handle loading & error states
 
 ### 5. CSS & Styling
 
-✅ **DO**: Gunakan Tailwind utility classes  
-✅ **DO**: Gunakan shadcn-vue components  
-❌ **DON'T**: Custom CSS jika bisa pakai Tailwind
+ **DO**: Gunakan Tailwind utility classes  
+ **DO**: Gunakan shadcn-vue components  
+ **DON'T**: Custom CSS jika bisa pakai Tailwind
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### CORS Issues
 
@@ -684,7 +684,7 @@ Jika shadcn component tidak ditemukan, install ulang:
 npx shadcn-vue@latest add [component-name]
 ```
 
-## 📚 Resources
+##  Resources
 
 - [Vue 3 Documentation](https://vuejs.org/)
 - [TypeScript Documentation](https://www.typescriptlang.org/)
@@ -693,10 +693,10 @@ npx shadcn-vue@latest add [component-name]
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
 - [Vite Documentation](https://vitejs.dev/)
 
-## 📄 License
+##  License
 
 Private project - All rights reserved
 
 ---
 
-**Dibuat dengan ❤️ menggunakan Vue 3 + shadcn-vue**
+**Dibuat dengan hati nurani menggunakan Vue 3 + shadcn-vue**
